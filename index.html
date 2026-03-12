@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>FX AI Live</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:#f2f2f7;color:#1c1c1e}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)}}
+@keyframes ping{0%{transform:scale(1);opacity:.8}100%{transform:scale(2.4);opacity:0}}
+@keyframes toast{0%{opacity:0;transform:translateY(-14px)}15%,78%{opacity:1;transform:translateY(0)}100%{opacity:0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fade-up{animation:fadeUp .3s ease forwards}
+.slide-in{animation:slideIn .25s ease forwards}
+.card{background:#fff;border-radius:20px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.05);border:1px solid rgba(0,0,0,.05)}
+.btn{border:none;border-radius:14px;font-family:'DM Sans',-apple-system,sans-serif;font-weight:700;cursor:pointer;transition:all .18s;-webkit-appearance:none;outline:none}
+.btn:active{opacity:.8;transform:scale(.96)}
+.btn-blue{background:#007AFF;color:#fff;padding:10px 22px;font-size:14px}
+.btn-red{background:#FF3B30;color:#fff;padding:10px 22px;font-size:14px}
+.btn-ghost{background:rgba(0,0,0,.07);color:#3c3c43;padding:7px 13px;font-size:12px;font-weight:700}
+.btn-ghost.on{background:#007AFF;color:#fff}
+.ring{width:8px;height:8px;border-radius:50%;background:#34C759;position:relative;display:inline-block;flex-shrink:0}
+.ring::before{content:'';position:absolute;inset:-4px;border-radius:50%;background:rgba(52,199,89,.35);animation:ping 1.6s ease-out infinite}
+.mono{font-family:'JetBrains Mono',monospace}
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700}
+#app{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+#hdr{padding:10px 14px 8px;background:rgba(242,242,247,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,.07);flex-shrink:0}
+#sbar{display:flex;align-items:center;gap:6px;padding:5px 14px;font-size:11px;color:#8e8e93;background:rgba(0,0,0,.025);border-bottom:1px solid rgba(0,0,0,.05);flex-shrink:0;min-height:26px}
+#pbar{display:flex;gap:5px;padding:7px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-shrink:0;scrollbar-width:none}
+#pbar::-webkit-scrollbar{display:none}
+#main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 12px 24px}
+.pcrd{padding:13px 15px;margin-bottom:9px}
+.pbig{font-size:36px;font-weight:800;letter-spacing:-1.5px;line-height:1;transition:color .4s}
+.prow{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;margin-top:5px}
+.srow{display:flex;align-items:center;gap:7px;margin-top:10px}
+.swrap{flex:1;height:6px;border-radius:3px;background:rgba(255,59,48,.2);overflow:hidden}
+.sfill{height:100%;border-radius:3px;background:linear-gradient(90deg,#34C759,#30d158);transition:width 1.2s ease}
+#cbox{margin-bottom:9px;overflow:hidden}
+#posbar{padding:10px 14px;margin-bottom:9px;display:none;align-items:center;justify-content:space-between;gap:8px;border-radius:20px}
+#aibox{padding:13px 15px;margin-bottom:9px;display:none}
+.cbar{height:4px;border-radius:2px;background:rgba(0,0,0,.06);margin-top:10px;overflow:hidden}
+.cfill{height:100%;border-radius:2px;transition:width 1s ease}
+#tabs{display:flex;gap:4px;padding:4px;border-radius:18px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:9px}
+.tbtn{flex:1;padding:8px;border-radius:14px;font-size:12px;font-weight:700;border:none;font-family:'DM Sans',-apple-system,sans-serif;cursor:pointer;transition:all .2s;outline:none}
+.tbtn.on{background:#007AFF;color:#fff}
+.tbtn:not(.on){background:transparent;color:#8e8e93}
+.fcrd{margin-bottom:8px;padding:11px 13px}
+.ftit{font-size:12px;font-weight:600;line-height:1.45;color:#1c1c1e;margin:4px 0}
+.tli{display:flex;gap:9px;margin-bottom:12px;position:relative}
+.tld{width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.tls{position:absolute;left:13px;top:32px;bottom:-12px;width:2px;background:rgba(0,0,0,.05)}
+#tw{position:fixed;top:0;left:0;right:0;z-index:999;display:flex;flex-direction:column;align-items:center;gap:5px;padding-top:52px;pointer-events:none}
+.tst{padding:10px 18px;border-radius:100px;font-size:13px;font-weight:700;color:#fff;box-shadow:0 4px 20px rgba(0,0,0,.22);animation:toast 3.2s ease forwards;max-width:88%;text-align:center}
+.empty{text-align:center;padding:36px 16px;color:#aeaeb2;font-size:12px;line-height:2}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="hdr">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <div style="display:flex;align-items:center;gap:9px;flex:1">
+        <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#007AFF,#5856D6);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">💹</div>
+        <div>
+          <div style="font-weight:700;font-size:15px">FX AI Live</div>
+          <div style="font-size:11px;color:#8e8e93;display:flex;align-items:center;gap:5px;margin-top:1px">
+            <span id="hdot" style="width:7px;height:7px;border-radius:50%;background:#8e8e93;flex-shrink:0;display:inline-block"></span>
+            <span id="htxt">未接続</span>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:10px;color:#8e8e93">残高</div>
+        <div class="mono" id="bal" style="font-size:16px;font-weight:800">¥100,000</div>
+      </div>
+      <button class="btn btn-blue" id="mbtn" onclick="toggle()">▶ 開始</button>
+    </div>
+  </div>
+
+  <div id="sbar">
+    <span id="sdot" style="width:6px;height:6px;border-radius:50%;background:#8e8e93;flex-shrink:0;display:inline-block"></span>
+    <span id="smsg">接続待機中</span>
+    <span id="scnt" style="margin-left:auto;font-size:10px;opacity:.65"></span>
+  </div>
+
+  <div id="pbar"></div>
+
+  <div id="main">
+
+```
+<div class="card pcrd fade-up">
+  <div style="font-size:11px;color:#8e8e93;margin-bottom:3px;display:flex;align-items:center;gap:6px">
+    <span id="plbl">USD/JPY</span>
+    <span id="mbadge" style="font-size:10px;padding:1px 7px;border-radius:6px;background:rgba(0,0,0,.06);color:#8e8e93;font-weight:700"></span>
+  </div>
+  <div class="pbig mono" id="pel">---</div>
+  <div class="prow">
+    <span id="carr" style="color:#8e8e93">—</span>
+    <span id="cval" style="color:#8e8e93">---</span>
+    <span id="cpct" style="color:#8e8e93;font-size:12px"></span>
+    <span id="hllo" class="mono" style="margin-left:auto;font-size:11px;color:#aeaeb2"></span>
+  </div>
+  <div class="srow">
+    <span style="font-size:10px;color:#8e8e93;white-space:nowrap">センチメント</span>
+    <div class="swrap"><div class="sfill" id="sfill" style="width:50%"></div></div>
+    <span style="font-size:10px;font-weight:700;color:#34C759" id="sbull">強気 50%</span>
+    <span style="font-size:10px;font-weight:700;color:#FF3B30" id="sbear">50% 弱気</span>
+  </div>
+</div>
+
+<div class="card" id="cbox">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 14px 4px">
+    <span style="font-size:13px;font-weight:700">ライブチャート <span id="csub" style="font-size:10px;color:#8e8e93;font-weight:400">— 接続後に蓄積</span></span>
+    <span id="dpts" style="font-size:10px;color:#aeaeb2"></span>
+  </div>
+  <canvas id="cc" style="display:block;width:100%"></canvas>
+  <canvas id="vc" style="display:block;width:100%"></canvas>
+</div>
+
+<div id="posbar" class="card">
+  <div>
+    <div style="font-size:10px;color:#8e8e93">ポジション</div>
+    <div style="display:flex;align-items:center;gap:7px;margin-top:2px">
+      <span id="ptyp" style="font-size:14px;font-weight:800"></span>
+      <span class="mono" id="pent" style="font-size:11px;color:#3c3c43"></span>
+    </div>
+  </div>
+  <div style="text-align:center">
+    <div style="font-size:10px;color:#8e8e93">損益</div>
+    <div class="mono" id="ppnl" style="font-size:19px;font-weight:800;margin-top:1px">¥0</div>
+  </div>
+  <button class="btn btn-ghost" onclick="manualClose()">決済</button>
+</div>
+
+<div class="card" id="aibox">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px">
+    <span style="font-size:13px;font-weight:700">🤖 AI分析</span>
+    <div style="display:flex;align-items:center;gap:5px">
+      <span style="font-size:10px;color:#8e8e93">確信度</span>
+      <span class="mono" id="aconf" style="font-size:15px;font-weight:800">0%</span>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:9px;margin-bottom:9px">
+    <div id="abadge" style="padding:7px 16px;border-radius:11px;font-size:16px;font-weight:900;color:#fff;background:#8e8e93;flex-shrink:0">HOLD</div>
+    <div id="ahead" style="font-size:11px;color:#3c3c43;line-height:1.45;flex:1"></div>
+  </div>
+  <div id="areasons"></div>
+  <div class="cbar"><div class="cfill" id="acfill" style="width:0%"></div></div>
+</div>
+
+<div id="tabs">
+  <button class="tbtn on" id="ttl"   onclick="setTab('tl')">📋 タイムライン</button>
+  <button class="tbtn"    id="tnews" onclick="setTab('news')">📡 ニュース</button>
+</div>
+<div id="feed"></div>
+```
+
+  </div>
+</div>
+<div id="tw"></div>
+
+<script>
+var KEY    = 'd6p9gqhr01qk3chjf8hg';
+var REST   = 'https://finnhub.io/api/v1';
+var WS_URL = 'wss://ws.finnhub.io?token=' + KEY;
+
+var PAIRS  = ['USD/JPY','EUR/USD','GBP/USD','EUR/JPY','AUD/USD'];
+var SYM    = {
+  'USD/JPY':'OANDA:USD_JPY','EUR/USD':'OANDA:EUR_USD',
+  'GBP/USD':'OANDA:GBP_USD','EUR/JPY':'OANDA:EUR_JPY','AUD/USD':'OANDA:AUD_USD'
+};
+var DEC    = {'USD/JPY':3,'EUR/USD':5,'GBP/USD':5,'EUR/JPY':3,'AUD/USD':5};
+
+var pair   = 'USD/JPY';
+var running = false;
+var balance = 100000;
+var pos     = null;
+var pnl     = 0;
+var tab     = 'tl';
+var pts     = {};
+PAIRS.forEach(function(p){ pts[p] = []; });
+var lastPx  = {};
+var newsArr = [];
+var tlArr   = [];
+var lastNewsTs = 0;
+var ws      = null;
+var wsOk    = false;
+var ticks   = 0;
+var newsTimer = null;
+var pnlTimer  = null;
+var restTimer = null;
+
+/* ── Rounded rect polyfill (iOS Safari doesn't support ctx.roundRect) ── */
+function rr(c,x,y,w,h,r){
+  r = Math.min(r, w/2, h/2);
+  if(r < 0) r = 0;
+  c.beginPath();
+  c.moveTo(x+r, y);
+  c.lineTo(x+w-r, y);
+  c.arcTo(x+w, y, x+w, y+r, r);
+  c.lineTo(x+w, y+h-r);
+  c.arcTo(x+w, y+h, x+w-r, y+h, r);
+  c.lineTo(x+r, y+h);
+  c.arcTo(x, y+h, x, y+h-r, r);
+  c.lineTo(x, y+r);
+  c.arcTo(x, y, x+r, y, r);
+  c.closePath();
+}
+
+/* ── Status ── */
+function ss(state, msg){
+  var c = {ok:'#34C759',warn:'#FF9F0A',err:'#FF3B30',off:'#8e8e93'};
+  document.getElementById('sdot').style.background = c[state]||c.off;
+  document.getElementById('smsg').textContent = msg;
+}
+function setLive(on){
+  var d = document.getElementById('hdot');
+  var t = document.getElementById('htxt');
+  if(on){
+    d.className = 'ring'; d.style.cssText = '';
+    t.textContent = 'LIVE — データ受信中';
+  } else {
+    d.className = '';
+    d.style.cssText = 'width:7px;height:7px;border-radius:50%;background:#8e8e93;flex-shrink:0;display:inline-block';
+    t.textContent = '停止中';
+  }
+}
+
+/* ── XHR helper ── */
+function xhrGet(url, cb){
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', url, true);
+  xhr.timeout = 12000;
+  xhr.onload = function(){
+    if(xhr.status===200){
+      try{ cb(null, JSON.parse(xhr.responseText)); }
+      catch(e){ cb('parse error: '+e.message); }
+    } else { cb('HTTP '+xhr.status); }
+  };
+  xhr.onerror   = function(){ cb('network error'); };
+  xhr.ontimeout = function(){ cb('timeout'); };
+  xhr.send();
+}
+
+/* ── WebSocket ── */
+function connectWS(){
+  ss('warn','WebSocket接続中…');
+  try{
+    ws = new WebSocket(WS_URL);
+  } catch(e){
+    ss('warn','WS使用不可 → REST APIへ切り替え');
+    startREST(); return;
+  }
+
+  ws.onopen = function(){
+    wsOk = true;
+    setLive(true);
+    ss('ok','WebSocket接続完了 — リアルタイム受信中');
+    showToast('✅ 接続完了！リアルタイムデータ受信開始','ok');
+    PAIRS.forEach(function(p){
+      ws.send(JSON.stringify({type:'subscribe',symbol:SYM[p]}));
+    });
+    // News via REST (now works since we're served from a real URL)
+    doFetchNews();
+    newsTimer = setInterval(doFetchNews, 90000);
+    pnlTimer  = setInterval(updatePosUI, 2000);
+  };
+
+  ws.onmessage = function(e){
+    try{
+      var msg = JSON.parse(e.data);
+      if(msg.type==='trade' && msg.data && msg.data.length){
+        msg.data.forEach(function(tick){
+          var p = symToPair(tick.s);
+          if(!p) return;
+          var now = new Date();
+          var lb  = pad2(now.getHours())+':'+pad2(now.getMinutes());
+          pts[p].push({p:tick.p, lb:lb, v:tick.v||50});
+          if(pts[p].length>300) pts[p].shift();
+          lastPx[p] = tick.p;
+          ticks++;
+          document.getElementById('scnt').textContent = 'tick: '+ticks;
+          if(p===pair){
+            updatePriceUI();
+            drawChart();
+            document.getElementById('dpts').textContent = pts[pair].length+'件';
+            document.getElementById('csub').textContent = 'リアルタイム';
+          }
+        });
+      }
+    } catch(err){}
+  };
+
+  ws.onerror = function(){
+    wsOk = false;
+    ss('warn','WS失敗 → REST APIへ自動切り替え中…');
+    startREST();
+  };
+
+  ws.onclose = function(){
+    wsOk = false;
+    if(running){
+      ss('warn','切断 — 4秒後に再接続…');
+      setTimeout(connectWS, 4000);
+    }
+  };
+}
+
+function symToPair(sym){
+  var keys = Object.keys(SYM);
+  for(var i=0;i<keys.length;i++){ if(SYM[keys[i]]===sym) return keys[i]; }
+  return null;
+}
+
+/* ── REST fallback ── */
+function startREST(){
+  if(restTimer) return;
+  doFetchQuote(pair);
+  restTimer = setInterval(function(){ doFetchQuote(pair); }, 8000);
+  doFetchNews();
+  if(!newsTimer) newsTimer = setInterval(doFetchNews, 90000);
+  if(!pnlTimer)  pnlTimer  = setInterval(updatePosUI, 2000);
+  setLive(true);
+}
+
+function doFetchQuote(p){
+  var url = REST+'/quote?symbol='+encodeURIComponent(SYM[p])+'&token='+KEY;
+  xhrGet(url, function(err, d){
+    if(err){ ss('warn','価格取得失敗: '+err); return; }
+    if(!d||!d.c||d.c===0){
+      ss('warn','価格データなし（市場休場の可能性）');
+      document.getElementById('pel').textContent='休場中'; return;
+    }
+    var now = new Date();
+    var lb  = pad2(now.getHours())+':'+pad2(now.getMinutes());
+    var vol = (d.h&&d.l) ? Math.abs(d.h-d.l)*5000+Math.random()*60 : 60;
+    pts[p].push({p:d.c, lb:lb, v:vol});
+    if(pts[p].length>200) pts[p].shift();
+    lastPx[p] = d.c;
+    ticks++;
+    document.getElementById('scnt').textContent = 'REST: '+ticks;
+    if(p===pair){
+      updatePriceUI(); drawChart();
+      document.getElementById('dpts').textContent = pts[pair].length+'件';
+      document.getElementById('csub').textContent = 'REST更新';
+      ss('ok','価格更新: '+now.toLocaleTimeString('ja-JP'));
+    }
+  });
+}
+
+function doFetchNews(){
+  var url = REST+'/news?category=general&token='+KEY;
+  xhrGet(url, function(err, d){
+    if(err||!Array.isArray(d)) return;
+    var fresh;
+    if(!lastNewsTs){
+      lastNewsTs = d.length ? Math.max.apply(null,d.map(function(n){return n.datetime;})) : 0;
+      fresh = d.slice(0,5);
+    } else {
+      fresh = d.filter(function(n){return n.datetime>lastNewsTs;});
+      if(fresh.length) lastNewsTs = Math.max.apply(null,fresh.map(function(n){return n.datetime;}));
+    }
+    if(!fresh||!fresh.length) return;
+    fresh.forEach(processNews);
+    updateSentiment();
+    renderFeed();
+  });
+}
+
+function processNews(n){
+  var hl   = n.headline||n.summary||'（タイトルなし）';
+  var ai   = analyzeHL(hl);
+  var item = {
+    id:n.id, headline:hl, summary:n.summary||'', url:n.url,
+    src:n.source||'News', cred:85,
+    time:new Date((n.datetime||Date.now()/1000)*1000).toLocaleTimeString('ja-JP'), ai:ai
+  };
+  newsArr.unshift(item);
+  if(newsArr.length>40) newsArr.pop();
+  addTL({
+    icon: ai.action==='BUY'?'🟢':ai.action==='SELL'?'🔴':'📰',
+    color:'#007AFF',
+    title: hl.length>52 ? hl.slice(0,52)+'…' : hl,
+    detail: item.src+' | AI: '+ai.action+' | 確信度 '+ai.conf.toFixed(0)+'%',
+    reasons: ai.reasons
+  });
+  updateAICard(ai, hl.length>62 ? hl.slice(0,62)+'…' : hl);
+  if(running&&!pos&&ai.action!=='HOLD'&&ai.conf>65)
+    setTimeout(function(){ autoTrade(ai,item); }, 1000);
+}
+
+/* ── AI ── */
+var SIGS = [
+  {r:/\bfed\b|fomc|rate hike|hawkish|strong job|nonfarm|payroll|dollar strength/i,   s:'bullish_usd'},
+  {r:/rate cut|dovish|fed pause|weak jobs|recession|dollar fall|usd weakness/i,       s:'bearish_usd'},
+  {r:/bank of japan|\bboj\b|yen strength|jpy surge|japan gdp|intervention|ycc|ueda/i,s:'bullish_jpy'},
+  {r:/yen weak|yen fall|carry trade|japan trade deficit/i,                            s:'bearish_jpy'},
+  {r:/ecb hike|ecb hawkish|euro strength|europe gdp/i,                               s:'bullish_eur'},
+  {r:/ecb cut|ecb dovish|euro weak|europe recession/i,                               s:'bearish_eur'},
+  {r:/war|military conflict|geopolit|crisis|crash|default|collapse/i,                s:'risk_off'},
+  {r:/trade deal|peace|ceasefire|boom|risk rally/i,                                  s:'risk_on'}
+];
+function analyzeHL(hl){
+  var txt  = (hl||'').toLowerCase();
+  var base = pair.split('/')[0].toLowerCase();
+  var qte  = pair.split('/')[1].toLowerCase();
+  var action='HOLD', conf=46, reasons=[];
+  SIGS.forEach(function(sig){
+    if(!sig.r.test(txt)) return;
+    var lbl = sig.s.replace('_',' ').toUpperCase();
+    if(sig.s==='bullish_'+base||sig.s==='bearish_'+qte)  {action='BUY'; conf=Math.max(conf,72); reasons.push(base.toUpperCase()+'強材料: '+lbl);}
+    else if(sig.s==='bearish_'+base||sig.s==='bullish_'+qte){action='SELL';conf=Math.max(conf,72); reasons.push(base.toUpperCase()+'弱材料: '+lbl);}
+    else if(sig.s==='risk_off'&&qte==='jpy'){action='SELL';conf=Math.max(conf,63);reasons.push('リスクオフ → 円買い圧力');}
+    else if(sig.s==='risk_on' &&qte==='jpy'){action='BUY'; conf=Math.max(conf,63);reasons.push('リスクオン → 円売り圧力');}
+  });
+  if(!reasons.length) reasons.push('明確な方向性シグナルなし');
+  reasons.push('情報源信頼性: 85% | 影響スコア: '+conf.toFixed(0)+'点');
+  if(conf<64){action='HOLD';reasons.push('確信度不足 → 様子見');}
+  return {action:action, conf:Math.min(93,conf), reasons:reasons};
+}
+function updateSentiment(){
+  var b=0,s=0;
+  newsArr.slice(0,10).forEach(function(n){
+    if(n.ai.action==='BUY') b++; if(n.ai.action==='SELL') s++;
+  });
+  var t=b+s||1, bp=Math.max(20,Math.min(80,Math.round(b/t*100)));
+  document.getElementById('sfill').style.width = bp+'%';
+  document.getElementById('sbull').textContent = '強気 '+bp+'%';
+  document.getElementById('sbear').textContent = (100-bp)+'% 弱気';
+}
+function updateAICard(ai,hl){
+  document.getElementById('aibox').style.display='block';
+  var c=ai.conf, col=c>72?'#34C759':c>56?'#FF9F0A':'#8e8e93';
+  document.getElementById('aconf').textContent=c.toFixed(0)+'%';
+  document.getElementById('aconf').style.color=col;
+  var b=document.getElementById('abadge');
+  b.textContent=ai.action;
+  b.style.background=ai.action==='BUY'?'#34C759':ai.action==='SELL'?'#FF3B30':'#8e8e93';
+  document.getElementById('ahead').textContent=hl||'';
+  document.getElementById('areasons').innerHTML=ai.reasons.map(function(r){
+    return '<div style="display:flex;gap:5px;font-size:11px;color:#3c3c43;margin-bottom:3px"><span style="color:#007AFF;flex-shrink:0">→</span><span>'+r+'</span></div>';
+  }).join('');
+  var f=document.getElementById('acfill');
+  f.style.width=c+'%'; f.style.background=col;
+}
+
+/* ── Price UI ── */
+function pad2(n){return n<10?'0'+n:''+n;}
+function fmt(v,p){return(v||0).toFixed(DEC[p||pair]);}
+function updatePriceUI(){
+  var cur=lastPx[pair]; if(!cur) return;
+  var all=pts[pair], prev=all.length>1?all[all.length-2].p:cur;
+  var diff=cur-prev, up=diff>=0, pct=prev?diff/prev*100:0;
+  document.getElementById('pel').textContent=fmt(cur);
+  document.getElementById('pel').style.color=up?'#34C759':'#FF3B30';
+  var arr=document.getElementById('carr');
+  arr.textContent=up?'▲':'▼'; arr.style.color=up?'#34C759':'#FF3B30';
+  document.getElementById('cval').textContent=Math.abs(diff).toFixed(DEC[pair]);
+  document.getElementById('cval').style.color=up?'#34C759':'#FF3B30';
+  document.getElementById('cpct').textContent='('+(up?'+':'')+pct.toFixed(3)+'%)';
+  document.getElementById('cpct').style.color=up?'#34C759':'#FF3B30';
+  document.getElementById('plbl').textContent=pair;
+  if(all.length>1){
+    var prices=all.map(function(d){return d.p;});
+    document.getElementById('hllo').textContent='H:'+fmt(Math.max.apply(null,prices))+' L:'+fmt(Math.min.apply(null,prices));
+  }
+  var wd=new Date().getDay(), open=wd>0&&wd<6;
+  var mb=document.getElementById('mbadge');
+  mb.textContent=open?'OPEN':'CLOSE';
+  mb.style.background=open?'rgba(52,199,89,.1)':'rgba(255,59,48,.08)';
+  mb.style.color=open?'#34C759':'#FF3B30';
+}
+function updateBalUI(){
+  document.getElementById('bal').textContent='¥'+Math.round(balance).toLocaleString('ja-JP');
+}
+
+/* ── Canvas Chart ── */
+var cc=document.getElementById('cc');
+var vc=document.getElementById('vc');
+var ctx=cc.getContext('2d');
+var vx=vc.getContext('2d');
+var dpr=window.devicePixelRatio||1;
+
+function resizeC(){
+  var w=document.getElementById('cbox').clientWidth||(window.innerWidth-24);
+  var H=160, VH=28;
+  cc.width=Math.round(w*dpr); cc.height=Math.round(H*dpr);
+  cc.style.width=w+'px'; cc.style.height=H+'px';
+  vc.width=Math.round(w*dpr); vc.height=Math.round(VH*dpr);
+  vc.style.width=w+'px'; vc.style.height=VH+'px';
+}
+window.addEventListener('resize',function(){resizeC();drawChart();});
+
+function drawChart(){
+  resizeC();
+  var W=cc.clientWidth, H=cc.clientHeight||160;
+  var VW=vc.clientWidth, VH=vc.clientHeight||28;
+  // Reset transform before clearing
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  vx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+  vx.clearRect(0,0,VW,VH);
+
+  var data=pts[pair]||[];
+  if(data.length<2){
+    ctx.fillStyle='rgba(142,142,147,.4)';
+    ctx.font='14px -apple-system,sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText(
+      data.length===0?'▶ 開始後にリアルデータが表示されます':'蓄積中… '+data.length+'件',
+      W/2, H/2
+    );
+    return;
+  }
+
+  var prices=data.map(function(d){return d.p;});
+  var mn=Math.min.apply(null,prices), mx=Math.max.apply(null,prices);
+  var pad=(mx-mn)*.12||.0001;
+  var lo=mn-pad, hi=mx+pad;
+  function px(i){return data.length<2?W/2:i/(data.length-1)*W;}
+  function py(v){return H-((v-lo)/(hi-lo)*H*.86+H*.05);}
+  var isUp=prices[prices.length-1]>=prices[0];
+  var lc=isUp?'#34C759':'#FF3B30';
+
+  // Grid
+  ctx.strokeStyle='rgba(0,0,0,.04)'; ctx.lineWidth=1;
+  for(var gi=1;gi<5;gi++){
+    ctx.beginPath(); ctx.moveTo(0,H*gi/5); ctx.lineTo(W,H*gi/5); ctx.stroke();
+  }
+
+  // Fill
+  var g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,isUp?'rgba(52,199,89,.22)':'rgba(255,59,48,.22)');
+  g.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.beginPath();
+  data.forEach(function(d,i){i===0?ctx.moveTo(px(i),py(d.p)):ctx.lineTo(px(i),py(d.p));});
+  ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
+  ctx.fillStyle=g; ctx.fill();
+
+  // Glow
+  ctx.beginPath();
+  ctx.strokeStyle=isUp?'rgba(52,199,89,.13)':'rgba(255,59,48,.13)';
+  ctx.lineWidth=8; ctx.lineJoin='round';
+  data.forEach(function(d,i){i===0?ctx.moveTo(px(i),py(d.p)):ctx.lineTo(px(i),py(d.p));});
+  ctx.stroke();
+
+  // Line
+  ctx.beginPath();
+  ctx.strokeStyle=lc; ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.lineCap='round';
+  data.forEach(function(d,i){i===0?ctx.moveTo(px(i),py(d.p)):ctx.lineTo(px(i),py(d.p));});
+  ctx.stroke();
+
+  // Entry line
+  if(pos){
+    var ey=py(pos.entryPrice);
+    ctx.setLineDash([6,5]);
+    ctx.strokeStyle='rgba(0,122,255,.7)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(0,ey); ctx.lineTo(W,ey); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='rgba(0,122,255,.82)';
+    rr(ctx,4,ey-10,54,18,4); ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.font='bold 11px JetBrains Mono,monospace';
+    ctx.textAlign='left'; ctx.fillText('Entry',8,ey+5);
+  }
+
+  // Live dot
+  var lx=px(data.length-1), ly=py(prices[prices.length-1]);
+  ctx.beginPath(); ctx.arc(lx,ly,5,0,Math.PI*2); ctx.fillStyle=lc; ctx.fill();
+  ctx.beginPath(); ctx.arc(lx,ly,9,0,Math.PI*2);
+  ctx.fillStyle=isUp?'rgba(52,199,89,.2)':'rgba(255,59,48,.2)'; ctx.fill();
+
+  // Y labels
+  ctx.fillStyle='rgba(142,142,147,.8)';
+  ctx.font='10px JetBrains Mono,monospace'; ctx.textAlign='left';
+  var dec=DEC[pair];
+  [lo+pad,(lo+hi)/2,hi-pad].forEach(function(v){
+    var y=py(v); if(y<14||y>H-6) return;
+    ctx.fillText(v.toFixed(dec),4,y+4);
+  });
+
+  // Time labels
+  if(data.length>=4){
+    ctx.fillStyle='rgba(142,142,147,.55)';
+    ctx.font='9px JetBrains Mono,monospace'; ctx.textAlign='center';
+    var step=Math.floor(data.length/3);
+    [0,step,step*2,data.length-1].forEach(function(i){
+      if(data[i]) ctx.fillText(data[i].lb||'',px(i),H-2);
+    });
+  }
+
+  // Volume bars
+  var vols=data.map(function(d){return d.v||0;});
+  var maxV=Math.max.apply(null,vols)||1;
+  data.forEach(function(d,i){
+    var bw=Math.max(1,(VW/data.length)*.6), bh=(d.v/maxV)*VH*.8;
+    vx.fillStyle='rgba(0,122,255,.18)';
+    rr(vx,px(i)-bw/2,VH-bh,bw,bh,2); vx.fill();
+  });
+}
+
+/* ── Position ── */
+function updatePosUI(){
+  var bar=document.getElementById('posbar');
+  if(!pos){bar.style.display='none'; return;}
+  bar.style.display='flex';
+  var cur=lastPx[pos.pair]||pos.entryPrice;
+  var diff=pos.type==='BUY'?cur-pos.entryPrice:pos.entryPrice-cur;
+  pnl=diff*10000;
+  var up=pnl>=0;
+  bar.style.background=up?'rgba(52,199,89,.07)':'rgba(255,59,48,.07)';
+  bar.style.border='1px solid '+(up?'rgba(52,199,89,.3)':'rgba(255,59,48,.3)');
+  document.getElementById('ptyp').textContent=pos.type;
+  document.getElementById('ptyp').style.color=pos.type==='BUY'?'#34C759':'#FF3B30';
+  document.getElementById('pent').textContent=fmt(pos.entryPrice);
+  document.getElementById('ppnl').textContent=(pnl>=0?'+':'')+'¥'+pnl.toFixed(0);
+  document.getElementById('ppnl').style.color=up?'#34C759':'#FF3B30';
+  if(pnl>600)  closeTrade('TP達成 +¥600');
+  if(pnl<-350) closeTrade('SL到達 -¥350');
+}
+function autoTrade(ai,nitem){
+  if(!running||pos) return;
+  var cur=lastPx[pair];
+  if(!cur){addTL({icon:'⚠️',color:'#FF9F0A',title:'価格未取得 — 売買スキップ',detail:'価格データ待機中'});return;}
+  pos={type:ai.action, entryPrice:cur, pair:pair};
+  pnl=0; updatePosUI();
+  addTL({icon:ai.action==='BUY'?'🟢':'🔴',color:ai.action==='BUY'?'#34C759':'#FF3B30',
+    title:ai.action+' '+pair+' @ '+fmt(cur),
+    detail:'確信度: '+ai.conf.toFixed(0)+'% | '+ai.reasons[0],reasons:ai.reasons});
+  showToast('AI: '+ai.action+' '+pair, ai.action.toLowerCase());
+}
+function closeTrade(reason){
+  var gain=pnl, cp=pos?lastPx[pos.pair]:null;
+  balance+=gain;
+  addTL({icon:gain>=0?'✅':'❌',color:gain>=0?'#34C759':'#FF3B30',
+    title:'決済: '+reason+' ('+(gain>=0?'+':'')+'¥'+gain.toFixed(0)+')',
+    detail:'クローズ @ '+(cp?fmt(cp,pos?pos.pair:pair):'---')+' | 損益: '+(gain>=0?'+':'')+'¥'+gain.toFixed(2)});
+  showToast(reason+': '+(gain>=0?'+':'')+'¥'+gain.toFixed(0), gain>=0?'buy':'sell');
+  pos=null; pnl=0; updatePosUI(); updateBalUI();
+}
+function manualClose(){if(pos) closeTrade('手動決済');}
+
+/* ── Toast ── */
+function showToast(msg,type){
+  var bg=type==='buy'?'linear-gradient(135deg,#34C759,#30d158)'
+       :type==='sell'?'linear-gradient(135deg,#FF3B30,#ff453a)'
+       :type==='ok'?'linear-gradient(135deg,#34C759,#30d158)'
+       :'linear-gradient(135deg,#007AFF,#0a84ff)';
+  var el=document.createElement('div');
+  el.className='tst'; el.style.background=bg; el.textContent=msg;
+  document.getElementById('tw').appendChild(el);
+  setTimeout(function(){if(el.parentNode) el.parentNode.removeChild(el);},3300);
+}
+
+/* ── Feed ── */
+function addTL(e){
+  var entry={}; var keys=Object.keys(e); keys.forEach(function(k){entry[k]=e[k];});
+  entry.ts=new Date().toLocaleTimeString('ja-JP');
+  tlArr.unshift(entry);
+  if(tlArr.length>60) tlArr.pop();
+  if(tab==='tl') renderFeed();
+}
+function setTab(t){
+  tab=t;
+  document.getElementById('ttl').className='tbtn'+(t==='tl'?' on':'');
+  document.getElementById('tnews').className='tbtn'+(t==='news'?' on':'');
+  renderFeed();
+}
+function renderFeed(){
+  var el=document.getElementById('feed');
+  if(tab==='tl') renderTL(el); else renderNT(el);
+}
+function renderTL(el){
+  if(!tlArr.length){
+    el.innerHTML='<div class="empty">▶ 開始ボタンを押してください<br>Finnhubからリアルデータを取得します</div>'; return;
+  }
+  el.innerHTML=tlArr.slice(0,30).map(function(item,i){
+    return '<div class="tli slide-in">'
+      +(i<tlArr.length-1?'<div class="tls"></div>':'')
+      +'<div class="tld" style="background:'+item.color+'18;border:1.5px solid '+item.color+'38">'+item.icon+'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="display:flex;justify-content:space-between;gap:4px">'
+      +'<div style="font-size:12px;font-weight:600;color:#1c1c1e;line-height:1.4">'+item.title+'</div>'
+      +'<div style="font-size:10px;color:#aeaeb2;font-family:JetBrains Mono,monospace;white-space:nowrap;flex-shrink:0">'+item.ts+'</div>'
+      +'</div>'
+      +'<div style="font-size:11px;color:#8e8e93;margin-top:2px;line-height:1.4">'+item.detail+'</div>'
+      +(item.reasons?'<div style="margin-top:5px;background:rgba(0,122,255,.05);border-radius:8px;padding:5px 8px">'
+        +item.reasons.slice(0,2).map(function(r){return '<div style="font-size:10px;color:#3c3c43;margin-bottom:2px">・'+r+'</div>';}).join('')
+        +'</div>':'')
+      +'</div></div>';
+  }).join('');
+}
+function renderNT(el){
+  if(!newsArr.length){
+    el.innerHTML='<div class="empty">▶ 開始するとFinnhubのリアルニュースを取得します</div>'; return;
+  }
+  el.innerHTML=newsArr.slice(0,20).map(function(n){
+    return '<div class="card fcrd fade-up">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">'
+      +'<div style="display:flex;align-items:center;gap:5px">'
+      +'<span>📰</span><span style="font-size:11px;font-weight:800;color:#007AFF">'+n.src+'</span>'
+      +'<span class="tag" style="background:rgba(52,199,89,.1);color:#34C759">LIVE</span>'
+      +(n.ai&&n.ai.action!=='HOLD'?'<span class="tag" style="background:'+(n.ai.action==='BUY'?'rgba(52,199,89,.12)':'rgba(255,59,48,.1)')+';color:'+(n.ai.action==='BUY'?'#34C759':'#FF3B30')+'">'+n.ai.action+'</span>':'')
+      +'</div>'
+      +'<span style="font-size:10px;color:#aeaeb2;font-family:JetBrains Mono,monospace;flex-shrink:0">'+n.time+'</span>'
+      +'</div>'
+      +'<div class="ftit">'+(n.headline.length>88?n.headline.slice(0,88)+'…':n.headline)+'</div>'
+      +'<div style="display:flex;align-items:center;justify-content:space-between">'
+      +'<span style="font-size:10px;color:#8e8e93;flex:1;padding-right:8px">'+(n.summary?n.summary.slice(0,60)+'…':'')+'</span>'
+      +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
+      +'<div style="width:34px;height:3px;background:rgba(0,0,0,.08);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+n.cred+'%;background:#34C759;border-radius:2px"></div></div>'
+      +'<span style="font-size:10px;font-weight:700;color:#34C759">'+n.cred+'%</span>'
+      +'</div></div>'
+      +(n.url?'<a href="'+n.url+'" target="_blank" style="font-size:10px;color:#007AFF;text-decoration:none;margin-top:4px;display:block">全文を読む →</a>':'')
+      +'</div>';
+  }).join('');
+}
+
+/* ── Pair / Controls ── */
+function buildPbar(){
+  document.getElementById('pbar').innerHTML=PAIRS.map(function(p){
+    return '<button class="btn btn-ghost'+(p===pair?' on':'')+'" onclick="changePair(\''+p+'\')">'+p+'</button>';
+  }).join('');
+}
+function changePair(p){
+  if(ws&&wsOk){
+    try{
+      ws.send(JSON.stringify({type:'unsubscribe',symbol:SYM[pair]}));
+      ws.send(JSON.stringify({type:'subscribe',symbol:SYM[p]}));
+    }catch(e){}
+  }
+  pair=p; buildPbar();
+  document.getElementById('plbl').textContent=p;
+  drawChart(); updatePriceUI();
+  addTL({icon:'🔄',color:'#5856D6',title:'通貨ペア変更: '+p,detail:'データ取得中'});
+}
+function toggle(){running?stop():start();}
+function start(){
+  running=true;
+  document.getElementById('mbtn').textContent='⏹ 停止';
+  document.getElementById('mbtn').className='btn btn-red';
+  addTL({icon:'🚀',color:'#007AFF',title:'シミュレーター開始',detail:'Finnhub接続中 | 残高: ¥'+balance.toLocaleString('ja-JP')});
+  connectWS();
+}
+function stop(){
+  running=false;
+  clearInterval(newsTimer); clearInterval(pnlTimer); clearInterval(restTimer);
+  newsTimer=null; pnlTimer=null; restTimer=null;
+  if(ws){try{ws.close();}catch(e){} ws=null;}
+  wsOk=false;
+  document.getElementById('mbtn').textContent='▶ 開始';
+  document.getElementById('mbtn').className='btn btn-blue';
+  setLive(false); ss('off','停止中');
+  if(pos) closeTrade('シミュレーター停止');
+  showToast('シミュレーター停止','info');
+}
+
+/* ── Init ── */
+buildPbar(); resizeC(); drawChart(); renderFeed();
+window.addEventListener('orientationchange',function(){setTimeout(function(){resizeC();drawChart();},300);});
+</script>
+
+</body>
+</html>
